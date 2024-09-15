@@ -1,5 +1,5 @@
 ## guild-tracker
-kotlin micronaut lambda service.
+kotlin micronaut lambda service. 
 
 ## Micronaut 4.6.1 Documentation
 
