@@ -1,6 +1,12 @@
 ## guild-tracker
 kotlin micronaut lambda service. 
 
+## things to add
+* pvp arena ratings
+* mythic plus ratings
+* automate guild events
+* anything else that we think could be neat
+
 ## Micronaut 4.6.1 Documentation
 
 - [User Guide](https://docs.micronaut.io/4.6.1/guide/index.html)
