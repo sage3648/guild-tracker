@@ -74,6 +74,6 @@ class BlizzardApi(
         val response = apiClient.toBlocking().retrieve(request, String::class.java)
         val jsonNode = objectMapper.readTree(response)
 
-        return jsonNode["equipped_item_level"].asInt()
+        return jsonNode["average_item_level"].asInt()
     }
 }

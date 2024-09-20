@@ -66,16 +66,6 @@ class Function : RequestHandler<Map<String, Any>, String> {
 //          sort by item level
             characterItemLevels.sortByDescending { it.second }
 
-//            val characterItemLevels = members.map { (name, realm) ->
-//                try {
-//                    val itemLevel = blizzardApiService.getCharacterItemLevel(realm, name)
-//                    Pair(name, itemLevel)
-//                } catch (e: Exception) {
-//                    context.logger.log("Error retrieving item level for $name: ${e.message}")
-//                    null // Handle exceptions as needed
-//                }
-//            }
-
             // Update Google Sheets
             googleSheetsService.updateSheet(characterItemLevels)
 
