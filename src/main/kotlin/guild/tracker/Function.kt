@@ -2,10 +2,10 @@ package guild.tracker
 
 import com.amazonaws.services.lambda.runtime.Context
 import com.amazonaws.services.lambda.runtime.RequestHandler
-import guild.tracker.service.DiscordApi
-import guild.tracker.service.SheetApi
 import com.fasterxml.jackson.databind.ObjectMapper
 import guild.tracker.service.BlizzardApi
+import guild.tracker.service.DiscordApi
+import guild.tracker.service.SheetApi
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.PropertySource
 import io.micronaut.http.client.HttpClient
@@ -57,13 +57,15 @@ class Function : RequestHandler<Map<String, Any>, String> {
             val members = blizzardApiService.getGuildRoster(realmSlug, guildSlug)
 
             val characterItemLevels = mutableListOf<Pair<String, Int>>()
-            val characterMythicPlusRatings = mutableListOf<Pair<String, Double>>()
+            val characterMythicPlusRatings = mutableListOf<Pair<String, Int>>()
 
             members.forEach { member ->
                 val itemLevel = blizzardApiService.getCharacterItemLevel(member.second, member.first)
-                var mythicPlusRating = blizzardApiService.getCharacterMythicPlusRatings(member.second, member.first)
+                val mythicPlusRating = blizzardApiService.getCharacterMythicPlusRatings(member.second, member.first)
                 characterItemLevels.add(Pair(member.first, itemLevel))
-                characterMythicPlusRatings.add(Pair(member.first, mythicPlusRating))
+                if (mythicPlusRating != null) {
+                    characterMythicPlusRatings.add(Pair(member.first, mythicPlusRating))
+                }
             }
 
 //          sort

@@ -77,22 +77,27 @@ class BlizzardApi(
         return jsonNode["average_item_level"].asInt()
     }
 
-    fun getCharacterMythicPlusRatings(realmSlug: String, characterName: String): Double {
-        val token = getAccessToken()
-        val uri =
-            UriBuilder.of("/profile/wow/character/$realmSlug/${characterName.toLowerCase()}/mythic-keystone-profile")
-                .queryParam("namespace", "profile-us")
-                .queryParam("locale", "en_US")
-                .queryParam("access_token", token)
-                .build()
+    fun getCharacterMythicPlusRatings(realmSlug: String, characterName: String): Int? {
+        try {
+            val token = getAccessToken()
+            val uri =
+                UriBuilder.of("/profile/wow/character/$realmSlug/${characterName.toLowerCase()}/mythic-keystone-profile")
+                    .queryParam("namespace", "profile-us")
+                    .queryParam("locale", "en_US")
+                    .queryParam("access_token", token)
+                    .build()
 
-        val request = HttpRequest.GET<String>(uri)
-        val response = apiClient.toBlocking().retrieve(request, String::class.java)
-        val jsonNode = objectMapper.readTree(response)
+            val request = HttpRequest.GET<String>(uri)
+            val response = apiClient.toBlocking().retrieve(request, String::class.java)
+            val jsonNode = objectMapper.readTree(response)
 
-        val currentMythicRatingNode = jsonNode["current_mythic_rating"]
+            val currentMythicRatingNode = jsonNode["current_mythic_rating"]
 
-        return currentMythicRatingNode["rating"].asDouble()
+            return currentMythicRatingNode["rating"].asDouble().toInt()
+        } catch (e: Exception) {
+            println("failed to retrieve mythic rating for ${characterName}")
+            return null
+        }
     }
 
     //todo get weekly best run <- available in API

@@ -24,7 +24,7 @@ class DiscordApi(
         httpClient.toBlocking().exchange(request, String::class.java)
     }
 
-    fun postMythicRatingsMessage(data: MutableList<Pair<String, Double>>) {
+    fun postMythicRatingsMessage(data: MutableList<Pair<String, Int>>) {
         val header = "Mythic+ Leaderboard \n"
         val content = data.withIndex()
             .joinToString("\n") { (index, rating) -> "${index + 1}. ${rating.first}: Mythic Rating ${rating.second}" }
