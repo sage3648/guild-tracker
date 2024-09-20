@@ -6,6 +6,7 @@ import com.amazonaws.services.lambda.runtime.RequestHandler
 import com.fasterxml.jackson.databind.ObjectMapper
 import guild.tracker.client.BlizzardClient
 import guild.tracker.client.DiscordClient
+import guild.tracker.model.CharacterProfileResponse
 import guild.tracker.service.SheetApi
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.PropertySource
@@ -54,7 +55,7 @@ class Function : RequestHandler<Map<String, Any>, String> {
 
             val members = blizzardApiService.getGuildRoster(realmSlug, guildSlug)
 
-            val characterItemLevels = mutableListOf<Pair<String, Int>>()
+            val characterItemLevels = mutableListOf<CharacterProfileResponse>()
             val characterMythicPlusRatings = mutableListOf<MythicPLusRatingProfile>()
 
             members.forEach { member ->
@@ -62,7 +63,7 @@ class Function : RequestHandler<Map<String, Any>, String> {
                 val mythicPlusRating = blizzardApiService.getCharacterMythicPlusRatings(member.second, member.first)
 
                 if (characterProfile != null) {
-                    characterItemLevels.add(Pair(member.first, characterProfile.averageItemLevel))
+                    characterItemLevels.add(characterProfile)
                 }
                 if (mythicPlusRating != null && characterProfile != null) {
                     characterMythicPlusRatings.add(
@@ -74,11 +75,13 @@ class Function : RequestHandler<Map<String, Any>, String> {
             }
 
 //          sort
-            characterItemLevels.sortByDescending { it.second }
+            characterItemLevels.sortByDescending { it.averageItemLevel }
             characterMythicPlusRatings.sortByDescending { it.rating }
 
             // Update Google Sheets
-            googleSheetsService.updateSheet(characterItemLevels)
+            //todo re-enable if it seems valuable to use the sheet rather than discord
+            //todo also make it better by having classes and roles etc, something that we could actually use <- 
+//            googleSheetsService.updateSheet(characterItemLevels)
 
             discordService.postItemLevelMessage(characterItemLevels.take(15))
             discordService.postMythicRatingsMessage(characterMythicPlusRatings.take(15))
