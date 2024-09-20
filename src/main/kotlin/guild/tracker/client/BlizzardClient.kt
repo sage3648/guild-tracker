@@ -1,6 +1,7 @@
-package guild.tracker.service
+package guild.tracker.client
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import guild.tracker.model.CharacterProfileResponse
 import io.micronaut.context.annotation.Property
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.MediaType
@@ -8,7 +9,7 @@ import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.uri.UriBuilder
 
-class BlizzardApi(
+class BlizzardClient(
     @Property(name = "blizzard.client-id") private val clientId: String,
     @Property(name = "blizzard.client-secret") private val clientSecret: String,
     @Client("https://us.battle.net") private val oauthClient: HttpClient,
@@ -62,7 +63,7 @@ class BlizzardApi(
         return members
     }
 
-    fun getCharacterItemLevel(realmSlug: String, characterName: String): Int {
+    fun getCharacter(realmSlug: String, characterName: String): CharacterProfileResponse? {
         val token = getAccessToken()
         val uri = UriBuilder.of("/profile/wow/character/$realmSlug/${characterName.toLowerCase()}")
             .queryParam("namespace", "profile-us")
@@ -70,11 +71,14 @@ class BlizzardApi(
             .queryParam("access_token", token)
             .build()
 
-        val request = HttpRequest.GET<String>(uri)
-        val response = apiClient.toBlocking().retrieve(request, String::class.java)
-        val jsonNode = objectMapper.readTree(response)
 
-        return jsonNode["average_item_level"].asInt()
+        val request = HttpRequest.GET<String>(uri)
+        return try {
+            apiClient.toBlocking().retrieve(request, CharacterProfileResponse::class.java)
+        } catch (e: Exception) {
+            println("failed to retrieve character profile $characterName, exception $e")
+            null
+        }
     }
 
     fun getCharacterMythicPlusRatings(realmSlug: String, characterName: String): Int? {
@@ -94,7 +98,7 @@ class BlizzardApi(
             val currentMythicRatingNode = jsonNode["current_mythic_rating"]
 
             return currentMythicRatingNode["rating"].asDouble().toInt()
-        } catch (e: Exception) {
+        } catch (e: NullPointerException) {
             println("failed to retrieve mythic rating for ${characterName}")
             return null
         }

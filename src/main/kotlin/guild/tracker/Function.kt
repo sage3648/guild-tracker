@@ -1,10 +1,11 @@
 package guild.tracker
 
+import MythicPLusRatingProfile
 import com.amazonaws.services.lambda.runtime.Context
 import com.amazonaws.services.lambda.runtime.RequestHandler
 import com.fasterxml.jackson.databind.ObjectMapper
-import guild.tracker.service.BlizzardApi
-import guild.tracker.service.DiscordApi
+import guild.tracker.client.BlizzardClient
+import guild.tracker.client.DiscordClient
 import guild.tracker.service.SheetApi
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.PropertySource
@@ -14,11 +15,9 @@ class Function : RequestHandler<Map<String, Any>, String> {
 
     override fun handleRequest(input: Map<String, Any>, context: Context): String {
 //        val environment = Environment.ENVIRONMENT_LAMBDA
-        val applicationContext = ApplicationContext.builder()
-            .propertySources(
+        val applicationContext = ApplicationContext.builder().propertySources(
                 PropertySource.of(
-                    "lambda",
-                    mapOf(
+                    "lambda", mapOf(
                         "blizzard.client-id" to System.getenv("BLIZZARD_CLIENT_ID"),
                         "blizzard.client-secret" to System.getenv("BLIZZARD_CLIENT_SECRET"),
                         "google.service-account.key" to System.getenv("GOOGLE_SERVICE_ACCOUNT_KEY"),
@@ -26,13 +25,12 @@ class Function : RequestHandler<Map<String, Any>, String> {
                         "discord.webhook.url" to System.getenv("DISCORD_WEBHOOK_URL")
                     )
                 )
-            )
-            .build()
+            ).build()
         applicationContext.start()
 
         val objectMapper = applicationContext.getBean(ObjectMapper::class.java)
 
-        val blizzardApiService = BlizzardApi(
+        val blizzardApiService = BlizzardClient(
             applicationContext.getRequiredProperty("blizzard.client-id", String::class.java),
             applicationContext.getRequiredProperty("blizzard.client-secret", String::class.java),
             applicationContext.createBean(HttpClient::class.java, "https://us.battle.net"),
@@ -46,7 +44,7 @@ class Function : RequestHandler<Map<String, Any>, String> {
             objectMapper
         )
 
-        val discordService = DiscordApi(
+        val discordService = DiscordClient(
             applicationContext.getRequiredProperty("discord.webhook.url", String::class.java)
         )
 
@@ -57,26 +55,33 @@ class Function : RequestHandler<Map<String, Any>, String> {
             val members = blizzardApiService.getGuildRoster(realmSlug, guildSlug)
 
             val characterItemLevels = mutableListOf<Pair<String, Int>>()
-            val characterMythicPlusRatings = mutableListOf<Pair<String, Int>>()
+            val characterMythicPlusRatings = mutableListOf<MythicPLusRatingProfile>()
 
             members.forEach { member ->
-                val itemLevel = blizzardApiService.getCharacterItemLevel(member.second, member.first)
+                val characterProfile = blizzardApiService.getCharacter(member.second, member.first)
                 val mythicPlusRating = blizzardApiService.getCharacterMythicPlusRatings(member.second, member.first)
-                characterItemLevels.add(Pair(member.first, itemLevel))
-                if (mythicPlusRating != null) {
-                    characterMythicPlusRatings.add(Pair(member.first, mythicPlusRating))
+
+                if (characterProfile != null) {
+                    characterItemLevels.add(Pair(member.first, characterProfile.averageItemLevel))
+                }
+                if (mythicPlusRating != null && characterProfile != null) {
+                    characterMythicPlusRatings.add(
+                        MythicPLusRatingProfile(
+                            characterProfile.name, mythicPlusRating, characterProfile.characterClass
+                        )
+                    )
                 }
             }
 
 //          sort
             characterItemLevels.sortByDescending { it.second }
-            characterMythicPlusRatings.sortByDescending { it.second }
+            characterMythicPlusRatings.sortByDescending { it.rating }
 
             // Update Google Sheets
             googleSheetsService.updateSheet(characterItemLevels)
 
-            discordService.postItemLevelMessage(characterItemLevels)
-            discordService.postMythicRatingsMessage(characterMythicPlusRatings)
+            discordService.postItemLevelMessage(characterItemLevels.take(15))
+            discordService.postMythicRatingsMessage(characterMythicPlusRatings.take(15))
             //todo pvp rating
             //todo mythic plus rating
             //todo rating against other guilds
