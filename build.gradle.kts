@@ -16,7 +16,7 @@ repositories {
 }
 
 dependencies {
-    implementation(platform("io.micronaut:micronaut-bom:3.9.0"))
+    implementation(platform("io.micronaut:micronaut-bom:3.10.4"))
     ksp("io.micronaut:micronaut-http-validation")
     ksp("io.micronaut.serde:micronaut-serde-processor")
     implementation("io.micronaut.aws:micronaut-aws-lambda-events-serde")
@@ -49,7 +49,7 @@ java {
 //graalvmNative.toolchainDetection = false
 
 micronaut {
-//    runtime("lambda")
+    runtime("netty")
     testRuntime("junit5")
     processing {
         incremental(true)
@@ -59,15 +59,15 @@ micronaut {
 
 
 
-//tasks.named<io.micronaut.gradle.docker.NativeImageDockerfile>("dockerfileNative") {
-//    baseImage = "amazonlinux:2023"
-//    jdkVersion = "17"
-//    args(
-//        "-XX:MaximumHeapSizePercent=80",
-//        "-Dio.netty.allocator.numDirectArenas=0",
-//        "-Dio.netty.noPreferDirect=true"
-//    )
-//}
+tasks.named<io.micronaut.gradle.docker.NativeImageDockerfile>("dockerfileNative") {
+    baseImage = "amazonlinux:2023"
+    jdkVersion = "21"
+    args(
+        "-XX:MaximumHeapSizePercent=80",
+        "-Dio.netty.allocator.numDirectArenas=0",
+        "-Dio.netty.noPreferDirect=true"
+    )
+}
 
 tasks {
     shadowJar {

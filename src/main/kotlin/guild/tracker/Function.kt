@@ -57,19 +57,24 @@ class Function : RequestHandler<Map<String, Any>, String> {
             val members = blizzardApiService.getGuildRoster(realmSlug, guildSlug)
 
             val characterItemLevels = mutableListOf<Pair<String, Int>>()
+            val characterMythicPlusRatings = mutableListOf<Pair<String, Double>>()
 
             members.forEach { member ->
                 val itemLevel = blizzardApiService.getCharacterItemLevel(member.second, member.first)
+                var mythicPlusRating = blizzardApiService.getCharacterMythicPlusRatings(member.second, member.first)
                 characterItemLevels.add(Pair(member.first, itemLevel))
+                characterMythicPlusRatings.add(Pair(member.first, mythicPlusRating))
             }
 
-//          sort by item level
+//          sort
             characterItemLevels.sortByDescending { it.second }
+            characterMythicPlusRatings.sortByDescending { it.second }
 
             // Update Google Sheets
             googleSheetsService.updateSheet(characterItemLevels)
 
-            discordService.postMessage(characterItemLevels)
+            discordService.postItemLevelMessage(characterItemLevels)
+            discordService.postMythicRatingsMessage(characterMythicPlusRatings)
             //todo pvp rating
             //todo mythic plus rating
             //todo rating against other guilds
