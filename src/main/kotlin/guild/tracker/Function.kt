@@ -83,8 +83,8 @@ class Function : RequestHandler<Map<String, Any>, String> {
             //todo also make it better by having classes and roles etc, something that we could actually use <- 
 //            googleSheetsService.updateSheet(characterItemLevels)
 
-            discordService.postItemLevelMessage(characterItemLevels.take(15))
-            discordService.postMythicRatingsMessage(characterMythicPlusRatings.take(15))
+            discordService.postItemLevelMessage(characterItemLevels.take(25))
+            discordService.postMythicRatingsMessage(characterMythicPlusRatings.take(25))
             //todo pvp rating
             //todo mythic plus rating
             //todo rating against other guilds
